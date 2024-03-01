@@ -1,0 +1,12 @@
+name: sample-golang-kafka
+services:
+- name: producer
+  source_dir: producer
+  github:
+    repo: blesswinsamuel/sample-golang-kafka
+    branch: main
+- name: consumer
+  source_dir: consumer
+  github:
+    repo: blesswinsamuel/sample-golang-kafka
+    branch: main
