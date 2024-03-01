@@ -5,7 +5,6 @@ go 1.21
 require (
 	github.com/IBM/sarama v1.43.0
 	github.com/go-sql-driver/mysql v1.7.1
-	github.com/gofrs/uuid v3.3.0+incompatible
 	github.com/lib/pq v1.10.9
 )
 

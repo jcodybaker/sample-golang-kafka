@@ -27,21 +27,19 @@ func runConsumer() error {
 	topic := os.Getenv("KAFKA_TOPIC")
 	username := os.Getenv("KAFKA_USERNAME")
 	password := os.Getenv("KAFKA_PASSWORD")
-	// init config, enable errors and notifications
+
+	// https://docs.digitalocean.com/products/databases/kafka/how-to/connect/
 	config := sarama.NewConfig()
 	config.Metadata.Full = true
-	config.ClientID = "test-client2"
+	config.ClientID = "sample-client"
 	config.Producer.Return.Successes = true
 
-	// Kafka SASL configuration
 	config.Net.SASL.Enable = true
 	config.Net.SASL.User = username
 	config.Net.SASL.Password = password
 	config.Net.SASL.Handshake = true
 	config.Net.SASL.Mechanism = sarama.SASLTypePlaintext
 
-	// TLS configuration
-	// https://docs.digitalocean.com/products/databases/kafka/how-to/connect/
 	caCertPool := x509.NewCertPool()
 	caCertPool.AppendCertsFromPEM([]byte(os.Getenv("KAFKA_CA_CERT")))
 	tlsConfig := &tls.Config{
@@ -51,7 +49,7 @@ func runConsumer() error {
 	config.Net.TLS.Config = tlsConfig
 
 	brokers := []string{broker}
-	consumer, err := sarama.NewConsumerGroup(brokers, "test-group", config)
+	consumer, err := sarama.NewConsumerGroup(brokers, "sample-group", config)
 	if err != nil {
 		return err
 	}
@@ -72,7 +70,7 @@ func (consumer *KafkaConsumer) Cleanup(sarama.ConsumerGroupSession) error { retu
 
 func (consumer *KafkaConsumer) ConsumeClaim(session sarama.ConsumerGroupSession, claim sarama.ConsumerGroupClaim) error {
 	for message := range claim.Messages() {
-		log.Printf("Message claimed: value = %s, timestamp = %v, topic = %s, partition = %d, offset = %d\n", string(message.Value), message.Timestamp, message.Topic, message.Partition, message.Offset)
+		log.Printf("Message consumed: value = %s, timestamp = %v, topic = %s, partition = %d, offset = %d\n", string(message.Value), message.Timestamp, message.Topic, message.Partition, message.Offset)
 		session.MarkMessage(message, "")
 	}
 	return nil
