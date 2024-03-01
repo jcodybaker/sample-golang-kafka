@@ -52,16 +52,11 @@ func main() {
 	}
 	defer producer.Close()
 
-	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		logRequest(r)
-		fmt.Fprintf(w, "Hello! you've requested %s\n", r.URL.Path)
-	})
-
 	http.HandleFunc("/produce", func(w http.ResponseWriter, r *http.Request) {
 		logRequest(r)
 		msg := &sarama.ProducerMessage{
 			Topic: topic,
-			Value: sarama.StringEncoder("hello"),
+			Value: sarama.StringEncoder("hello!"),
 		}
 		partition, offset, err := producer.SendMessage(msg)
 		if err != nil {
