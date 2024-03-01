@@ -2,15 +2,12 @@ package main
 
 import (
 	"context"
-	"crypto/sha256"
-	"crypto/sha512"
 	"crypto/tls"
 	"crypto/x509"
 	"log"
 	"os"
 
 	"github.com/IBM/sarama"
-	"github.com/xdg-go/scram"
 )
 
 func main() {
@@ -19,7 +16,6 @@ func main() {
 	if err != nil {
 		log.Fatalf("Error consuming messages: %v", err)
 	}
-	<-make(chan struct{})
 }
 
 func runConsumer() error {
@@ -31,7 +27,7 @@ func runConsumer() error {
 	// https://docs.digitalocean.com/products/databases/kafka/how-to/connect/
 	config := sarama.NewConfig()
 	config.Metadata.Full = true
-	config.ClientID = "sample-client"
+	config.ClientID = "sample-consumer-client"
 	config.Producer.Return.Successes = true
 
 	config.Net.SASL.Enable = true
@@ -74,33 +70,4 @@ func (consumer *KafkaConsumer) ConsumeClaim(session sarama.ConsumerGroupSession,
 		session.MarkMessage(message, "")
 	}
 	return nil
-}
-
-var (
-	SHA256 scram.HashGeneratorFcn = sha256.New
-	SHA512 scram.HashGeneratorFcn = sha512.New
-)
-
-type XDGSCRAMClient struct {
-	*scram.Client
-	*scram.ClientConversation
-	scram.HashGeneratorFcn
-}
-
-func (x *XDGSCRAMClient) Begin(userName, password, authzID string) (err error) {
-	x.Client, err = x.HashGeneratorFcn.NewClient(userName, password, authzID)
-	if err != nil {
-		return err
-	}
-	x.ClientConversation = x.Client.NewConversation()
-	return nil
-}
-
-func (x *XDGSCRAMClient) Step(challenge string) (response string, err error) {
-	response, err = x.ClientConversation.Step(challenge)
-	return
-}
-
-func (x *XDGSCRAMClient) Done() bool {
-	return x.ClientConversation.Done()
 }

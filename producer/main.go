@@ -4,6 +4,7 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"fmt"
+	"io"
 	"log"
 	"net/http"
 	"os"
@@ -26,8 +27,7 @@ func main() {
 	password := os.Getenv("KAFKA_PASSWORD")
 	conf := sarama.NewConfig()
 	conf.Metadata.Full = true
-	conf.ClientID = "test-client"
-	// conf.Version = sarama.V3_6_0_0
+	conf.ClientID = "sample-producer-client"
 	conf.Producer.Return.Successes = true
 
 	conf.Net.SASL.Enable = true
@@ -53,11 +53,25 @@ func main() {
 	defer producer.Close()
 
 	http.HandleFunc("/produce", func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != "POST" {
+			http.Error(w, "Invalid request method", http.StatusMethodNotAllowed)
+			return
+		}
 		logRequest(r)
+		reqBody, err := io.ReadAll(r.Body)
+		if err != nil {
+			fmt.Fprint(w, err)
+			return
+		}
+		var kafkaMsgValue sarama.Encoder = sarama.ByteEncoder(reqBody)
+		if len(reqBody) == 0 {
+			kafkaMsgValue = sarama.StringEncoder("hello!")
+		}
 		msg := &sarama.ProducerMessage{
 			Topic: topic,
-			Value: sarama.StringEncoder("hello!"),
+			Value: kafkaMsgValue,
 		}
+		defer r.Body.Close()
 		partition, offset, err := producer.SendMessage(msg)
 		if err != nil {
 			fmt.Fprint(w, err)
